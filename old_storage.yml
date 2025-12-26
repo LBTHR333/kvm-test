@@ -1,0 +1,51 @@
+---
+- name: Configure Shared NFS Storage for CentOS 10 KVM
+  hosts: all
+  become: true
+  vars:
+    nfs_server: "10.20.0.20"
+    nfs_path: "/mnt/SataPool00/kvmstor01"
+    pool_name: "nas_storage"
+    mount_point: "/var/lib/libvirt/images/nas_storage"
+
+  tasks:
+    - name: Install nfs-utils
+      dnf:
+        name: nfs-utils
+        state: present
+
+    - name: Set SELinux boolean for KVM on NFS
+      seboolean:
+        name: virt_use_nfs
+        state: true
+        persistent: true
+
+    - name: Create local directory for storage pool
+      file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Check if libvirt pool is already defined
+      command: virsh pool-info {{ pool_name }}
+      register: pool_check
+      failed_when: false
+      changed_when: false
+
+    - name: Define libvirt NFS storage pool
+      command: >
+        virsh pool-define-as --name {{ pool_name }}
+        --type netfs
+        --source-host {{ nfs_server }}
+        --source-path {{ nfs_path }}
+        --source-format nfs
+        --target {{ mount_point }}
+      when: pool_check.rc != 0
+
+    - name: Ensure libvirt pool is started
+      virt_pool:
+        name: "{{ pool_name }}"
+        state: active
+        autostart: true

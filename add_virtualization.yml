@@ -1,0 +1,58 @@
+---
+- name: Install and Configure KVM and Cockpit on CentOS 10
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure the system is up to date
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+    - name: Install Virtualization Host group
+      ansible.builtin.dnf:
+        name: "@Virtualization Host"
+        state: present
+
+    - name: Install Cockpit and Virtual Machine management extension
+      ansible.builtin.dnf:
+        name:
+          - cockpit
+          - cockpit-machines
+          - virt-install
+          - virt-viewer
+        state: present
+
+    - name: Enable and start libvirtd service
+      ansible.builtin.systemd:
+        name: libvirtd
+        enabled: yes
+        state: started
+
+    - name: Enable and start Cockpit socket
+      ansible.builtin.systemd:
+        name: cockpit.socket
+        enabled: yes
+        state: started
+
+    - name: Permit Cockpit traffic in firewalld
+      ansible.posix.firewalld:
+        service: cockpit
+        permanent: yes
+        state: enabled
+        immediate: yes
+
+    - name: Verify KVM kernel modules are loaded
+      ansible.builtin.shell: lsmod | grep kvm
+      register: kvm_check
+      changed_when: false
+      failed_when: kvm_check.rc != 0
+
+    - name: Display status
+      ansible.builtin.debug:
+        msg: "Installation complete. Access Cockpit at https://{{ ansible_host | default(inventory_hostname) }}:9090"
+
+    - name: Disable and remove libvirt default network
+      community.libvirt.virt_net:
+        name: default
+        state: absent
+        autostart: false

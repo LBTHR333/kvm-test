@@ -1,0 +1,103 @@
+---
+- name: Configure KVM Networking on CentOS 10
+  hosts: all
+  become: true
+  vars:
+    # Define physical interfaces here for easy management
+    stor_phys_interfaces:
+      - enp1s0f0
+      - enp1s0f1
+    vmsw_phys_interfaces:
+      - enp2s0f0
+      - enp2s0f1
+
+  tasks:
+    - name: Load VLAN definitions from CSV
+      community.general.read_csv:
+        path: vlans.csv
+      register: vlan_data
+      delegate_to: localhost
+
+    # --- STOR BRIDGE CONFIGURATION ---
+    - name: Create STOR Bridge
+      community.general.nmcli:
+        conn_name: STOR
+        ifname: STOR
+        type: bridge
+        stp: false
+        method4: auto
+        method6: disabled
+        state: present
+
+    - name: Create STOR LACP Bond
+      community.general.nmcli:
+        conn_name: STOR-Bond0
+        ifname: STOR-Bond0
+        type: bond
+        mode: 802.3ad
+        master: STOR
+        slave_type: bridge
+        state: present
+
+    - name: Attach physical interfaces to STOR-Bond0
+      community.general.nmcli:
+        conn_name: "STOR-Bond0-{{ item }}"
+        ifname: "{{ item }}"
+        type: bond-slave
+        master: STOR-Bond0
+        state: present
+      loop: "{{ stor_phys_interfaces }}"
+
+    # --- VMSW BRIDGE CONFIGURATION ---
+    - name: Create VMSW Bridge
+      community.general.nmcli:
+        conn_name: VMSW
+        ifname: VMSW
+        type: bridge
+        stp: false
+        method4: disabled
+        method6: disabled
+        state: present
+
+    - name: Create VMSW LACP Bond
+      community.general.nmcli:
+        conn_name: VMSW-Bond0
+        ifname: VMSW-Bond0
+        type: bond
+        mode: 802.3ad
+        master: VMSW
+        slave_type: bridge
+        state: present
+
+    - name: Attach physical interfaces to VMSW-Bond0
+      community.general.nmcli:
+        conn_name: "VMSW-Bond0-{{ item }}"
+        ifname: "{{ item }}"
+        type: bond-slave
+        master: VMSW-Bond0
+        state: present
+      loop: "{{ vmsw_phys_interfaces }}"
+
+    # --- DYNAMIC VLAN BRIDGE CONFIGURATION ---
+    - name: Create VLAN Bridges
+      community.general.nmcli:
+        conn_name: "{{ item.Name }}"
+        ifname: "{{ item.Name }}"
+        type: bridge
+        stp: false
+        method4: disabled
+        method6: disabled
+        state: present
+      loop: "{{ vlan_data.list }}"
+
+    - name: Create VLAN interfaces on VMSW-Bond0 and link to VLAN Bridges
+      community.general.nmcli:
+        conn_name: "vlan{{ item.VLAN }}-port"
+        ifname: "vmsw.v{{ item.VLAN }}"
+        type: vlan
+        vlanid: "{{ item.VLAN }}"
+        vlandev: VMSW-Bond0
+        master: "{{ item.Name }}"
+        slave_type: bridge
+        state: present
+      loop: "{{ vlan_data.list }}"
