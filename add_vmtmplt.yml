@@ -31,7 +31,7 @@
         --vcpus {{ vm_vcpus }}
         --disk size={{ vm_disk_size }},format=qcow2
         --os-variant {{ vm_os_variant }}
-        --network bridge=VLAN-40
+        --network bridge=VLAN-50
         --location {{ iso_url }}
         --graphics vnc,listen=0.0.0.0
         --video virtio
