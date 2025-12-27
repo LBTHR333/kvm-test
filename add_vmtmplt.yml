@@ -1,0 +1,47 @@
+---
+- name: Create Debian 13 KVM Template (Unattended)
+  hosts: localhost
+  become: true
+  vars:
+    vm_name: "TMPLT_deb"
+    vm_memory: 1024
+    vm_vcpus: 1
+    vm_disk_size: 10
+    vm_os_variant: "debian12"
+    iso_url: "https://deb.debian.org/debian/dists/trixie/main/installer-amd64/"
+    preseed_path: "./preseed.cfg"
+
+  tasks:
+    - name: Ensure libvirt dependencies are installed
+      dnf:
+        name: [libvirt, python3-libvirt, virt-install, qemu-img]
+        state: present
+
+    - name: Check if VM already exists
+      command: virsh dominfo {{ vm_name }}
+      register: vm_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Provision VM with Unattended Preseed
+      command: >
+        virt-install
+        --name {{ vm_name }}
+        --memory {{ vm_memory }}
+        --vcpus {{ vm_vcpus }}
+        --disk size={{ vm_disk_size }},format=qcow2
+        --os-variant {{ vm_os_variant }}
+        --network bridge=VLAN-40
+        --location {{ iso_url }}
+        --graphics vnc,listen=0.0.0.0
+        --video virtio
+        --initrd-inject {{ preseed_path }}
+        --extra-args "auto=true priority=critical preseed/file=/preseed.cfg console=ttyS0,115200n8"
+        --noautoconsole
+        --wait=-1
+      when: vm_check.rc != 0
+
+    - name: Shut down VM for template use
+      command: virsh destroy {{ vm_name }}
+      when: vm_check.rc != 0
+      ignore_errors: true
