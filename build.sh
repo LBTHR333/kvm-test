@@ -22,5 +22,6 @@ ansible-galaxy collection install community.general ansible.posix community.libv
 
 ansible-playbook -i localhost, -c local add_virtualization.yml
 ansible-playbook -i localhost, -c local add_network.yml
+ansible-playbook -i localhost, -c local add_storage.yml
 
 echo "Installation complete!"
