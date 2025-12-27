@@ -50,9 +50,3 @@
     - name: Display status
       ansible.builtin.debug:
         msg: "Installation complete. Access Cockpit at https://{{ ansible_host | default(inventory_hostname) }}:9090"
-
-    - name: Disable and remove libvirt default network
-      community.libvirt.virt_net:
-        name: default
-        state: absent
-        autostart: false
