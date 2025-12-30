@@ -1,6 +1,6 @@
 # KVM Hypervisor Configuration for CentOS 10
 
-This project contains a set of Ansible playbooks and shell scripts designed to fully configure a KVM hypervisor on a fresh CentOS 10 installation. The scripts automate the setup of virtualization, networking, and storage.
+This project contains a set of Ansible playbooks and shell scripts designed to fully configure a KVM hypervisor on a fresh CentOS 10 installation. The scripts automate the setup of virtualization, networking, and storage.  It's dumb and stupid and sucks and the point is learning all kinds of stuff and things. 
 
 ## Network Diagram
 
