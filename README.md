@@ -65,10 +65,10 @@ graph TD
     VLAN_etc_IF --" "--> BR_VLAN_etc
     VLAN90_IF --"Attached as port"--> BR_VLAN90
 
-    style BR_VLAN10 fill:#cde4ff,stroke:#6a9fdf
-    style BR_VLAN20 fill:#cde4ff,stroke:#6a9fdf
-    style BR_VLAN_etc fill:#cde4ff,stroke:#6a9fdf
-    style BR_VLAN90 fill:#cde4ff,stroke:#6a9fdf
+    style BR_VLAN10 fill:#888888,stroke:#6a9fdf
+    style BR_VLAN20 fill:#888888,stroke:#6a9fdf
+    style BR_VLAN_etc fill:#888888,stroke:#6a9fdf
+    style BR_VLAN90 fill:#888888,stroke:#6a9fdf
 ```
 
 ## Getting Started
